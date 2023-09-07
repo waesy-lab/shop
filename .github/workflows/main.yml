@@ -60,11 +60,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: app/package-lock.json
 
       - name: npm install, build, and test
         run: |
-          cd app/
-          npm install
+          npm install --prefix ./app
       
       - name: Upload php and node artifact for deployment job
         uses: actions/upload-artifact@v3
