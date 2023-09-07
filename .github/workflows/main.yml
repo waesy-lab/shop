@@ -7,6 +7,7 @@ on:
 
 env:
   PHP_VERSION: '8.2'                  # set this to the PHP version to use
+  NODE_VERSION: '20.x'                # set this to the node version to use
 
 permissions:
   contents: read
@@ -25,7 +26,6 @@ jobs:
 
       - name: Check if composer.json exists
         id: check_files
-        # uses: andstor/file-existence-action@87d74d4732ddb824259d80c8a508c0124bf1c673
         uses: andstor/file-existence-action@v2
         with:
           files: 'app/composer.json'
@@ -49,10 +49,27 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         run: composer validate --no-check-publish -d app && composer install --prefer-dist --no-progress -d app
 
-      - name: Upload artifact for deployment job
+      # - name: Upload php artifact for deployment job
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: php-app
+      #     path: .
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: npm install, build, and test
+        run: |
+          cd app/
+          npm install
+      
+      - name: Upload php and node artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: php-app
+          name: php-node-app
           path: .
 
   deploy:
@@ -65,10 +82,10 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
+      - name: Download php and node artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: php-app
+          name: php-node-app
 
       - name: Deploy to Staging server
         uses: easingthemes/ssh-deploy@main
